@@ -13,14 +13,23 @@
 
 class DirectoryReader {
     public:
+        DirectoryReader(const std::string &dirPath);
         DirectoryReader();
         ~DirectoryReader();
 
-        // Retrieves a list of files in the given directory.
-        std::vector<std::string> getListOfFiles(const std::string &dirPath);
+        // Reads the directory specified in the constructor.
+        void readDirectory();
 
-        // Retrieves a list of sub-directories in the given directory.
-        std::vector<std::string> getListOfDirectories(const std::string &dirPath);
+        // Retrieves a list of files in the directory specified in the constructor.
+        std::vector<std::string> getFiles() const;
+
+        // Retrieves a list of sub-directories in the directory specified in the constructor.
+        std::vector<std::string> getDirectories() const;
+
+    private:
+        std::string path;                       // The path to the current directory to be searched
+        std::vector<std::string> files;         // A list of files in the current directory
+        std::vector<std::string> directories;   // A list of sub-directories in the current directory
 
 };
 
