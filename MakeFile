@@ -1,0 +1,10 @@
+CC=g++
+CFLAGS=-Iinclude -Wall
+
+all: LFSA
+
+LFSA: src/main.cpp src/DirectoryReader.cpp src/FileAnalyzer.cpp src/ReportGenerator.cpp src/Utilities.cpp
+	$(CC) $(CFLAGS) -o $@ $^
+
+clean:
+	rm -f LFSA
