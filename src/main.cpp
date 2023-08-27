@@ -10,21 +10,33 @@
 #include "DirectoryReader.h"
 
 int main() {
-    DirectoryReader reader("/mnt/c/");
-    reader.readDirectory();
+    std::string root = "/";
+    std::vector <DirectoryReader> directoriesLeft = { DirectoryReader(root) };
+    std::vector<DirectoryReader> completedDirectories;
+    
+    while (!directoriesLeft.empty()) {
+        DirectoryReader currentDir = directoriesLeft.back();
+        directoriesLeft.pop_back();
 
-    std::vector<std::string> files = reader.getFiles();
-    std::vector<std::string> directories = reader.getDirectories();
+        currentDir.readDirectory();                     // Read the directory
+        completedDirectories.push_back(currentDir);     // Add the directory to the list of completed directories
 
-    std::cout << "Files:" << std::endl;
-    for (const auto& file : files) {
-        std::cout << file << std::endl;
+        // Initialize the list of directories to explore and add them to the list
+        if (currentDir.getDirectories().size() > 0) {
+            for (auto dir : currentDir.getDirectories()) {
+                std::cout << "Adding directory: " << dir << std::endl;
+                directoriesLeft.push_back(DirectoryReader(dir));
+            }
+            std::cout << "___________________________________________________________________________" << std::endl;
+        }
     }
 
-    std::cout << std::endl << "Directories:" << std::endl;
-    for (const auto& directory : directories) {
-        std::cout << directory << std::endl;
+    std::cout << "Completed directories: " << std::endl;
+    for (DirectoryReader dir : completedDirectories) {
+        std::cout << dir.getPath() << std::endl;
     }
+
+    
 
     return 0;
 }
