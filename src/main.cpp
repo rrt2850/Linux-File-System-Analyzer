@@ -12,6 +12,7 @@
 int main() {
     std::string root = "/";
     std::vector <DirectoryReader> directoriesLeft = { DirectoryReader(root) };
+    
     std::vector<DirectoryReader> completedDirectories;
     
     while (!directoriesLeft.empty()) {
@@ -25,7 +26,7 @@ int main() {
         if (currentDir.getDirectories().size() > 0) {
             for (auto dir : currentDir.getDirectories()) {
                 std::cout << "Adding directory: " << dir << std::endl;
-                directoriesLeft.push_back(DirectoryReader(dir));
+                directoriesLeft.push_back(DirectoryReader(dir, currentDir.getPath()));
             }
             std::cout << "___________________________________________________________________________" << std::endl;
         }
@@ -36,6 +37,16 @@ int main() {
         std::cout << dir.getPath() << std::endl;
     }
 
+    for (int i = 0; i < 10; i++) {
+        DirectoryReader tempDir = completedDirectories[i];
+        std::cout << "____________________________________________________________________________" << std::endl;
+        std::cout << "|\t" << tempDir.getPath() << std::endl;
+        std::cout << "|" << std::endl;
+
+        for (FileAnalyzer file : tempDir.getFiles()) {
+            std::cout << "- " << file << std::endl;
+        }
+    }
     
 
     return 0;

@@ -6,6 +6,7 @@
  ******************************************************************************/
 
 #include "DirectoryReader.h"                // header file for class definition
+#include "FileAnalyzer.h"                   // for getting file info
 #include <iostream>                         // for printing to console
 #include <dirent.h>                         // For directory functions
 #include <sys/types.h>                      // For data types used by dirent.h
@@ -24,8 +25,12 @@ using std::cerr;
 //  Constructors and Destructors
 //
 
-// Constructor that sets the specified path as the path variable
-DirectoryReader::DirectoryReader(const string& dirPath) : path(dirPath) {}
+// Root directory constructor
+DirectoryReader::DirectoryReader(const string& dirPath) : path(dirPath) {parentPath = "";}
+
+// Sub-directory constructor
+DirectoryReader::DirectoryReader(const string& dirPath, const string& parent) : path(dirPath), parentPath(parent) {}
+
 
 DirectoryReader::~DirectoryReader() {
     // Destructor
@@ -40,7 +45,7 @@ DirectoryReader::~DirectoryReader() {
  * 
  * @return files: A vector of strings, each string being the path to a file
  ******************************************************************************/
-vector<string> DirectoryReader::getFiles() const {
+vector<FileAnalyzer> DirectoryReader::getFiles() const {
     return files;
 }
 
@@ -97,6 +102,8 @@ void DirectoryReader::readDirectory() {
     struct dirent* entry;       // Pointer to a directory entry
     struct stat entInfo;        // Information about the directory entry
     string fullpath;            // A string to hold the full path of the entry
+    localSize = 0;              // Reset the local size variable
+    numFiles = 0;               // Reset the number of files variable
 
     // Reset the errno variable
     errno = 0;
@@ -120,6 +127,7 @@ void DirectoryReader::readDirectory() {
             fullpath = path + entry->d_name;
         }
         
+        // If there's an error stat-ing the path, skip it
         if (lstat(fullpath.c_str(), &entInfo) == -1) {
             cerr << "Error stat-ing path: " << fullpath << ". Error: " << strerror(errno) << endl;
             continue;  // move on to the next directory entry
@@ -157,8 +165,15 @@ void DirectoryReader::readDirectory() {
         } else {
             // The entry is a file
 
-            // Add the file name to the list of files
-            files.push_back(fullpath);
+            // Make an object to represent the file
+            FileAnalyzer file(fullpath, path);
+            file.analyzeFile();
+
+            // Update the total size and number of files
+            localSize += file.getFileSize();
+            numFiles++;
+
+            files.push_back(file);
         }
     }
 
