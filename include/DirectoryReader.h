@@ -19,6 +19,7 @@ class DirectoryReader {
         // A list of directories to skip
         const std::vector<std::string> SKIP_DIRECTORIES = {"/mnt/"};
 
+        DirectoryReader();
         DirectoryReader(const std::string &dirPath);
         DirectoryReader(const std::string &dirPath, const std::string &parent);
         ~DirectoryReader();
@@ -43,6 +44,8 @@ class DirectoryReader {
 
         // Retrieves the number of files in the directory specified in the constructor.
         int getNumFiles() const;
+
+        DirectoryReader& operator=(const DirectoryReader& other);
 
     private:
         std::string path;                       // The path to the current directory to be searched

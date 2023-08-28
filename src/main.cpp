@@ -8,34 +8,64 @@
 
 #include <iostream>
 #include "DirectoryReader.h"
+#include "ThreadPool.h"
 
 int main() {
     std::string root = "/";
-    std::vector <DirectoryReader> directoriesLeft = { DirectoryReader(root) };
-    
-    std::vector<DirectoryReader> completedDirectories;
-    
-    while (!directoriesLeft.empty()) {
-        DirectoryReader currentDir = directoriesLeft.back();
-        directoriesLeft.pop_back();
 
-        currentDir.readDirectory();                     // Read the directory
-        completedDirectories.push_back(currentDir);     // Add the directory to the list of completed directories
+    // A list of directories that still need to be read
+    std::vector<DirectoryReader> directoriesLeft = { DirectoryReader(root) };   
+    
+    // A list of directories that have been read
+    std::vector<DirectoryReader> completedDirectories;           
 
-        // Initialize the list of directories to explore and add them to the list
-        if (currentDir.getDirectories().size() > 0) {
-            for (auto dir : currentDir.getDirectories()) {
-                std::cout << "Adding directory: " << dir << std::endl;
-                directoriesLeft.push_back(DirectoryReader(dir, currentDir.getPath()));
+    // Initialize the thread pool
+    ThreadPool pool(100);
+
+    // Mutex for synchronizing access to the directoriesLeft and completedDirectories vectors
+    std::mutex dirMutex;
+
+    DirectoryReader currentDir;
+
+    while (true) {
+
+        // Start critical section
+        {
+            std::unique_lock<std::mutex> lock(dirMutex);
+            
+            if (directoriesLeft.empty()) {
+                if (pool.activeJobs == 0){
+                    break;  // Exit the loop if no directories are left
+                }
+                else {
+                    continue;  // Skip this iteration if there are no directories left but there are still active jobs
+                }
             }
-            std::cout << "___________________________________________________________________________" << std::endl;
+            
+            currentDir = directoriesLeft.back();
+            directoriesLeft.pop_back();
         }
+        // End critical section
+
+        // Use lambda to enqueue work to the thread pool
+        pool.enqueue([currentDir, &dirMutex, &completedDirectories, &directoriesLeft]() mutable {
+            currentDir.readDirectory();  // Read the directory
+
+            {
+                std::unique_lock<std::mutex> lock(dirMutex);
+                
+                if (!currentDir.getDirectories().empty()) {
+                    for (const auto& dir : currentDir.getDirectories()) {
+                        std::cout << "Adding directory: " << dir << std::endl;
+                        directoriesLeft.push_back(DirectoryReader(dir, currentDir.getPath()));
+                    }
+                }
+                completedDirectories.push_back(currentDir);  // Add to completed directories
+            }
+        });
     }
 
-    std::cout << "Completed directories: " << std::endl;
-    for (DirectoryReader dir : completedDirectories) {
-        std::cout << dir.getPath() << std::endl;
-    }
+    pool.waitForCompletion();
 
     for (int i = 0; i < 10; i++) {
         DirectoryReader tempDir = completedDirectories[i];
@@ -47,7 +77,6 @@ int main() {
             std::cout << "- " << file << std::endl;
         }
     }
-    
 
     return 0;
 }

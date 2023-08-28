@@ -25,6 +25,9 @@ using std::cerr;
 //  Constructors and Destructors
 //
 
+// Default constructor
+DirectoryReader::DirectoryReader() : totalSize(0), localSize(0), numFiles(0){}
+
 // Root directory constructor
 DirectoryReader::DirectoryReader(const string& dirPath) : path(dirPath) {parentPath = "";}
 
@@ -184,3 +187,23 @@ void DirectoryReader::readDirectory() {
 
     closedir(dir);
 }
+
+/******************************************************************************
+ * operator= : Overloads the assignment operator to copy the contents of one
+ *             DirectoryReader object to another.
+ * 
+ * @param other: A reference to the DirectoryReader object to be copied
+ * @return *this: A reference to the DirectoryReader object that was copied to
+ ******************************************************************************/
+DirectoryReader& DirectoryReader:: operator=(const DirectoryReader& other) {
+        if (this != &other) {  // self-assignment check
+            path = other.path;
+            parentPath = other.parentPath;
+            files = other.files;
+            directories = other.directories;
+            totalSize = other.totalSize;
+            localSize = other.localSize;
+            numFiles = other.numFiles;
+        }
+        return *this;
+    }

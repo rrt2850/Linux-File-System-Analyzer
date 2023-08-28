@@ -1,9 +1,9 @@
 CC=g++
-CFLAGS=-Iinclude -Wall
+CFLAGS=-Iinclude -Wall -g
 
 all: LFSA
 
-LFSA: src/main.cpp src/DirectoryReader.cpp src/FileAnalyzer.cpp src/ReportGenerator.cpp src/Utilities.cpp
+LFSA: src/main.cpp src/DirectoryReader.cpp src/FileAnalyzer.cpp src/ReportGenerator.cpp src/Utilities.cpp src/ThreadPool.cpp
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:

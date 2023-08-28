@@ -1,5 +1,5 @@
 /******************************************************************************
- * File: FileAnalyzer.cpp
+ * File: FileAnalyzer.h
  * Description: Analyzes individual files' attributes like size, type,
  *              and permissions.
  * Author: Robert Tetreault
