@@ -39,6 +39,12 @@ class DirectoryReader {
         // Retrieves the path of the parent directory.
         std::string getParentPath() const;
 
+        // Retrieves the average size of all files in the directory specified in the constructor.
+        double getAverageFileSize() const;
+
+        // Retrieves the average size of all sub-directories in the directory specified in the constructor.
+        double getAverageDirectorySize() const;
+
         // Retrieves the total size of all files in the directory specified in the constructor.
         double getTotalSize() const;
 
@@ -53,7 +59,8 @@ class DirectoryReader {
         std::vector<FileAnalyzer> files;        // A list of files in the current directory
         std::vector<std::string> directories;   // A list of sub-directories in the current directory
         double totalSize;                       // The size of all files and sub-directories in the current directory
-        double localSize;                       // The size of all files in the current directory
+        double fileTotalSize;                   // The size of all files in the current directory
+        double dirTotalSize;                    // The size of all sub-directories in the current directory
         int numFiles;                           // The number of files in the current directory
 };
 

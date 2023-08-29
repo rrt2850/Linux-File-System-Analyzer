@@ -7,8 +7,12 @@
  ******************************************************************************/
 
 #include <iostream>
+#include <fstream>
+#include <unordered_map>
 #include "DirectoryReader.h"
 #include "ThreadPool.h"
+#include "ReportGenerator.h"
+
 
 int main() {
     std::string root = "/";
@@ -16,8 +20,8 @@ int main() {
     // A list of directories that still need to be read
     std::vector<DirectoryReader> directoriesLeft = { DirectoryReader(root) };   
     
-    // A list of directories that have been read
-    std::vector<DirectoryReader> completedDirectories;           
+    // An unordered map of completed directories
+    std::unordered_map<std::string, DirectoryReader> completedDirectories; 
 
     // Initialize the thread pool
     ThreadPool pool(100);
@@ -60,23 +64,18 @@ int main() {
                         directoriesLeft.push_back(DirectoryReader(dir, currentDir.getPath()));
                     }
                 }
-                completedDirectories.push_back(currentDir);  // Add to completed directories
+                
+                // Add the current directory to the completedDirectories map
+                completedDirectories[currentDir.getPath()] = currentDir;
+
             }
         });
     }
 
     pool.waitForCompletion();
 
-    for (int i = 0; i < 10; i++) {
-        DirectoryReader tempDir = completedDirectories[i];
-        std::cout << "____________________________________________________________________________" << std::endl;
-        std::cout << "|\t" << tempDir.getPath() << std::endl;
-        std::cout << "|" << std::endl;
-
-        for (FileAnalyzer file : tempDir.getFiles()) {
-            std::cout << "- " << file << std::endl;
-        }
-    }
+    ReportGenerator report(completedDirectories);
+    report.treeBuilder(root);
 
     return 0;
 }

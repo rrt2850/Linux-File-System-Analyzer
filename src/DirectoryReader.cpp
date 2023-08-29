@@ -26,7 +26,7 @@ using std::cerr;
 //
 
 // Default constructor
-DirectoryReader::DirectoryReader() : totalSize(0), localSize(0), numFiles(0){}
+DirectoryReader::DirectoryReader() : totalSize(0), fileTotalSize(0), dirTotalSize(0), numFiles(0) {}
 
 // Root directory constructor
 DirectoryReader::DirectoryReader(const string& dirPath) : path(dirPath) {parentPath = "";}
@@ -64,6 +64,43 @@ vector<string> DirectoryReader::getDirectories() const {
 }
 
 /******************************************************************************
+ * getParentPath: Returns the path of the parent directory.
+ * 
+ * @return parentPath: The path of the parent directory
+ ******************************************************************************/
+string DirectoryReader::getParentPath() const {
+    return parentPath;
+}
+
+/******************************************************************************
+ * getAverageFileSize: Returns the average size of all files in the directory.
+ * 
+ * @return averageFileSize: The average size of all files in the directory
+ ******************************************************************************/
+double DirectoryReader::getAverageFileSize() const {
+    if (numFiles == 0 || fileTotalSize == 0) {
+        return 0;
+    }
+
+    return fileTotalSize / numFiles;
+}
+
+/******************************************************************************
+ * getAverageDirectorySize: Returns the average size of all sub-directories in
+ *                          the directory.
+ * 
+ * @return averageDirectorySize: The average size of all sub-directories in the
+ *                               directory
+ ******************************************************************************/
+double DirectoryReader::getAverageDirectorySize() const {
+    if (directories.size() == 0 || totalSize == 0) {
+        return 0;
+    }
+
+    return dirTotalSize / directories.size();
+}
+
+/******************************************************************************
  * getTotalSize: Returns the total size of all files in the directory.
  * 
  * @return totalSize: The total size of all files in the directory
@@ -71,6 +108,7 @@ vector<string> DirectoryReader::getDirectories() const {
 double DirectoryReader::getTotalSize() const {
     return totalSize;
 }
+
 
 /******************************************************************************
  * getNumFiles: Returns the number of files in the directory.
@@ -105,7 +143,7 @@ void DirectoryReader::readDirectory() {
     struct dirent* entry;       // Pointer to a directory entry
     struct stat entInfo;        // Information about the directory entry
     string fullpath;            // A string to hold the full path of the entry
-    localSize = 0;              // Reset the local size variable
+    fileTotalSize = 0;          // Reset the local size variable
     numFiles = 0;               // Reset the number of files variable
 
     // Reset the errno variable
@@ -173,7 +211,7 @@ void DirectoryReader::readDirectory() {
             file.analyzeFile();
 
             // Update the total size and number of files
-            localSize += file.getFileSize();
+            fileTotalSize += file.getFileSize();
             numFiles++;
 
             files.push_back(file);
@@ -202,7 +240,8 @@ DirectoryReader& DirectoryReader:: operator=(const DirectoryReader& other) {
             files = other.files;
             directories = other.directories;
             totalSize = other.totalSize;
-            localSize = other.localSize;
+            fileTotalSize = other.fileTotalSize;
+            dirTotalSize = other.dirTotalSize;
             numFiles = other.numFiles;
         }
         return *this;
