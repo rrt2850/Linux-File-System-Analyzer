@@ -27,6 +27,12 @@ class DirectoryReader {
         // Reads the directory specified in the constructor.
         void readDirectory();
 
+        // Adds to the total size of all files and sub-directories in the directory specified in the constructor.
+        void addToTotalSize(double size);
+
+        // Adds to the total size of all sub-directories in the directory specified in the constructor.
+        void addToSubDirTotalSize(double size);
+
         // Retrieves a list of files in the directory specified in the constructor.
         std::vector<FileAnalyzer> getFiles() const;
 
@@ -60,7 +66,7 @@ class DirectoryReader {
         std::vector<std::string> directories;   // A list of sub-directories in the current directory
         double totalSize;                       // The size of all files and sub-directories in the current directory
         double fileTotalSize;                   // The size of all files in the current directory
-        double dirTotalSize;                    // The size of all sub-directories in the current directory
+        double subDirTotalSize;                 // The size of all sub-directories in the current directory
         int numFiles;                           // The number of files in the current directory
 };
 

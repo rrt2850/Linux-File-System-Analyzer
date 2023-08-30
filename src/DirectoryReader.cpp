@@ -26,7 +26,7 @@ using std::cerr;
 //
 
 // Default constructor
-DirectoryReader::DirectoryReader() : totalSize(0), fileTotalSize(0), dirTotalSize(0), numFiles(0) {}
+DirectoryReader::DirectoryReader() : totalSize(0), fileTotalSize(0), subDirTotalSize(0), numFiles(0) {}
 
 // Root directory constructor
 DirectoryReader::DirectoryReader(const string& dirPath) : path(dirPath) {parentPath = "";}
@@ -97,7 +97,7 @@ double DirectoryReader::getAverageDirectorySize() const {
         return 0;
     }
 
-    return dirTotalSize / directories.size();
+    return subDirTotalSize / directories.size();
 }
 
 /******************************************************************************
@@ -218,6 +218,12 @@ void DirectoryReader::readDirectory() {
         }
     }
 
+    // if there aren't any sub-directories, the total size is just the size of the files
+    if (directories.empty() && !files.empty()) {
+        totalSize += fileTotalSize;
+    }
+
+
     // Check if readdir() stopped due to an error
     if (errno != 0) {
         cerr << "Error reading directory: " << path << ". Error: " << strerror(errno) << endl;
@@ -227,6 +233,28 @@ void DirectoryReader::readDirectory() {
 }
 
 /******************************************************************************
+ * addToTotalSize: Adds to the total size of all files and sub-directories in
+ *                 the directory specified in the constructor.
+ * 
+ * @param size: The size to add to the total size of all files and
+ *              sub-directories
+ ******************************************************************************/
+void DirectoryReader::addToTotalSize(double size){
+    totalSize += size;
+}
+
+/******************************************************************************
+ * addToSubDirTotalSize: Adds to the total size of all sub-directories in the
+ *                       directory specified in the constructor.
+ * 
+ * @param size: The size to add to the total size of all sub-directories
+ ******************************************************************************/
+void DirectoryReader::addToSubDirTotalSize(double size){
+    subDirTotalSize += size;
+}
+
+
+/******************************************************************************
  * operator= : Overloads the assignment operator to copy the contents of one
  *             DirectoryReader object to another.
  * 
@@ -234,15 +262,15 @@ void DirectoryReader::readDirectory() {
  * @return *this: A reference to the DirectoryReader object that was copied to
  ******************************************************************************/
 DirectoryReader& DirectoryReader:: operator=(const DirectoryReader& other) {
-        if (this != &other) {  // self-assignment check
-            path = other.path;
-            parentPath = other.parentPath;
-            files = other.files;
-            directories = other.directories;
-            totalSize = other.totalSize;
-            fileTotalSize = other.fileTotalSize;
-            dirTotalSize = other.dirTotalSize;
-            numFiles = other.numFiles;
-        }
-        return *this;
+    if (this != &other) {  // self-assignment check
+        path = other.path;
+        parentPath = other.parentPath;
+        files = other.files;
+        directories = other.directories;
+        totalSize = other.totalSize;
+        fileTotalSize = other.fileTotalSize;
+        subDirTotalSize = other.subDirTotalSize;
+        numFiles = other.numFiles;
     }
+    return *this;
+}

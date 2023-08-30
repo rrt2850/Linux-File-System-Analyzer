@@ -22,6 +22,9 @@ int main() {
     
     // An unordered map of completed directories
     std::unordered_map<std::string, DirectoryReader> completedDirectories; 
+    
+    // An unordered map of deferred updates so 
+    std::unordered_map<std::string, double> deferredUpdates;
 
     // Initialize the thread pool
     ThreadPool pool(100);
@@ -51,24 +54,48 @@ int main() {
         }
         // End critical section
 
-        // Use lambda to enqueue work to the thread pool
-        pool.enqueue([currentDir, &dirMutex, &completedDirectories, &directoriesLeft]() mutable {
-            currentDir.readDirectory();  // Read the directory
+        pool.enqueue([currentDir, &dirMutex, &completedDirectories, &directoriesLeft, &deferredUpdates]() mutable {
+            // Expensive operation (reading directory) is outside the lock
+            currentDir.readDirectory();
 
+            // Lock when dealing with shared resources
             {
                 std::unique_lock<std::mutex> lock(dirMutex);
-                
+
+                // if the directory has been deferred and is now being read, update its total size
+                if (deferredUpdates.find(currentDir.getPath()) != deferredUpdates.end()) {
+                    // Add the deferred update to the directory's total size
+                    currentDir.addToSubDirTotalSize(deferredUpdates[currentDir.getPath()]);
+
+                    // Remove the deferred update
+                    deferredUpdates.erase(currentDir.getPath());
+                }
+
+                // Add subdirectories to directoriesLeft
                 if (!currentDir.getDirectories().empty()) {
                     for (const auto& dir : currentDir.getDirectories()) {
                         std::cout << "Adding directory: " << dir << std::endl;
                         directoriesLeft.push_back(DirectoryReader(dir, currentDir.getPath()));
                     }
                 }
-                
+
+                // Check if it has a parent and update its totalsize
+                std::string parentPath = currentDir.getParentPath();
+                if (!parentPath.empty()) {
+
+                    // If the parent directory has already been read, update its total size
+                    if (completedDirectories.find(parentPath) != completedDirectories.end()) {
+                        completedDirectories[parentPath].addToTotalSize(currentDir.getTotalSize());
+                    } else {
+                        // Add a deferred update
+                        deferredUpdates[parentPath] += currentDir.getTotalSize();
+                    }
+                }
+
                 // Add the current directory to the completedDirectories map
                 completedDirectories[currentDir.getPath()] = currentDir;
-
             }
+            // End of lock
         });
     }
 
@@ -76,6 +103,7 @@ int main() {
 
     ReportGenerator report(completedDirectories);
     report.treeBuilder(root);
+    report.dumpInfoToFile("info.txt");
 
     return 0;
 }

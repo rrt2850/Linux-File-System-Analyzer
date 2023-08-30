@@ -68,7 +68,7 @@ void ReportGenerator::dumpInfoToFile(std::string fileName) {
 
 /******************************************************************************
  * dumpPathsToFile: Dumps all the paths in the completedDirectories map to a
- *                  file with minimal formatting or organization.
+ *                  file with no formatting or organization.
  ******************************************************************************/
 void ReportGenerator::dumpPathsToFile(std::string fileName) {
     std::ofstream outFile(fileName);    // Open the file for writing
@@ -113,7 +113,6 @@ void ReportGenerator::dumpPathsToFileSorted(std::string fileName) {
     }
 
     // Sort the vector
-
     sortDirectories(sortedDirs);
 
     
@@ -132,20 +131,30 @@ void ReportGenerator::dumpPathsToFileSorted(std::string fileName) {
  * @param rootPath: The path of the root directory
  ******************************************************************************/
 void ReportGenerator::treeBuilder(std::string rootPath) {
+
+    // Check if the root directory exists in the completedDirectories map
     if (completedDirectories.find(rootPath) == completedDirectories.end()) {
         return;
     }
 
+    //  Get the root DirectoryReader object
     DirectoryReader rootDir = completedDirectories[rootPath];
+
+    // Check if the root directory is empty
     if (rootDir.getDirectories().empty() && rootDir.getFiles().empty()) {
         return;
     }
 
+    // Print the tree
     printTree(rootDir);
+
+    // Write the tree to a file
     std::ofstream outFile("output.txt");
+
+    // Check if the file was opened or created successfully
     if (outFile.is_open()) {
-        DirectoryReader rootDir = completedDirectories[rootPath]; 
-        printTreeToFile(rootDir, outFile);
+        DirectoryReader rootDir = completedDirectories[rootPath];   //  Get the root DirectoryReader object
+        printTreeToFile(rootDir, outFile);                          //  Print the tree to the file
         outFile.close();
     } else {
         std::cerr << "Unable to open file";
@@ -171,9 +180,9 @@ void ReportGenerator::printTree(const DirectoryReader& dir, std::string prefix, 
         newPrefix = prefix;
         isRoot = false;
     } else {
-        std::cout << prefix;                      // Print the prefix
-        std::cout << (isLast ? "└─ " : "├─ ");    // Print the tree symbol depending on if it's the last directory
-        std::cout << dir.getPath() << std::endl;  // Print the directory path
+        std::cout << prefix;                            // Print the prefix
+        std::cout << (isLast ? "└─ " : "├─ ");          // Print the tree symbol depending on if it's the last directory
+        std::cout << dir.getPath() << std::endl;        // Print the directory path
 
         newPrefix = prefix + (isLast ? "   " : "│  ");  // Update the prefix since we're going to print the subdirectories
     }
