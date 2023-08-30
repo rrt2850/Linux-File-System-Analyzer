@@ -77,6 +77,15 @@ string FileAnalyzer::getFilePermissions() const {
 }
 
 /******************************************************************************
+ * getFileExtension: Returns the extension of the current file.
+ * 
+ * @return fileExtension: A string containing the extension of the current file
+ ******************************************************************************/
+string FileAnalyzer::getFileExtension() const {
+    return fileExtension;
+}
+
+/******************************************************************************
  * getFileSize: Returns the size of the current file.
  * 
  * @return fileSize: A double containing the size of the current file
@@ -84,6 +93,7 @@ string FileAnalyzer::getFilePermissions() const {
 double FileAnalyzer::getFileSize() const {
     return fileSize;
 }
+
 
 //
 //  Public Methods
@@ -118,6 +128,7 @@ void FileAnalyzer::analyzeFile() {
     findType(fileInfo);            // Set file type
     findPermissions(fileInfo);     // Set file permissions
     findName();                    // Set file name
+    findExtension();               // Set file extension
 }
 
 /******************************************************************************
@@ -133,6 +144,7 @@ std::ostream& operator<<(std::ostream& os, const FileAnalyzer& obj) {
     os << "\tPath: " << obj.path << endl;
     os << "\tParent Path: " << obj.parentPath << endl;
     os << "\tType: " << obj.fileType << endl;
+    os << "\tExtension: " << obj.fileExtension << endl;
     os << "\tPermissions: " << obj.filePermissions << endl;
     os << "\tSize: " << obj.fileSize << " bytes" << endl;
     return os;
@@ -212,5 +224,26 @@ void FileAnalyzer::findName() {
     } else {
         fileName = path;  // If no directory separators were found, path is just the file name
         parentPath = "";
+    }
+}
+
+/******************************************************************************
+ * findExtension: Determines the extension of the current file.
+ * 
+ * @return void
+ * 
+ * note:    This method is called by analyzeFile() and should not be called
+ *          directly. There's no error checking because analyzeFile() already
+ *          handles that.
+ ******************************************************************************/
+void FileAnalyzer::findExtension() {
+    // Extract file extension from file name
+    size_t found = fileName.find_last_of(".");      // Find last period
+    
+    // If a period was found, extract the extension
+    if (found != string::npos) {
+        fileExtension = fileName.substr(found + 1); // Extract extension
+    } else {
+        fileExtension = "";                         // If no period was found, there is no extension
     }
 }

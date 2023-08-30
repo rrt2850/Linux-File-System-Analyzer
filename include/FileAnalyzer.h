@@ -29,6 +29,7 @@ class FileAnalyzer {
         std::string getFileName() const;
         std::string getFileType() const;
         std::string getFilePermissions() const;
+        std::string getFileExtension() const;
         double getFileSize() const;
 
         // Friend function to overload the insertion operator
@@ -46,6 +47,7 @@ class FileAnalyzer {
         std::string fileName;                   // The name of the current file
         std::string fileType;                   // The type of the current file
         std::string filePermissions;            // The permissions of the current file
+        std::string fileExtension;              // The extension of the current file
         double fileSize;                        // The size of the current file
 
 
@@ -53,6 +55,7 @@ class FileAnalyzer {
         void findType(struct stat fileInfo);        // Determines the type of the current file
         void findPermissions(struct stat fileInfo); // Determines the permissions of the current file
         void findName();                            // Determines the name of the current file
+        void findExtension();                       // Determines the extension of the current file
 
 };
 

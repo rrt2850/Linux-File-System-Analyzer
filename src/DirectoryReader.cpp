@@ -14,6 +14,10 @@
 #include <cerrno>                           // For errno
 #include <cstring>                          // For strerror()
 #include <unordered_set>                    // For directories to skip
+#include <unordered_map>                    // For counting file extensions
+#include <algorithm>                        // for std::max_element
+#include <iterator>                         // for std::distance
+#include <memory>                           // for std::shared_ptr
 
 using std::string;
 using std::vector;
@@ -101,6 +105,37 @@ double DirectoryReader::getAverageDirectorySize() const {
 }
 
 /******************************************************************************
+ * getTopFileExtension: Returns the most common file extension in the
+ *                          directory.
+ * 
+ * @return topExt: The most common file extension
+ ******************************************************************************/
+string DirectoryReader::getTopFileExtension() const{
+    string topExt = "";
+    std::unordered_map<string, int> extCounts;
+
+    // Count occurrences of each file extension
+    for (auto &file : files) {
+        string ext = file.getFileExtension();
+        extCounts[ext]++;
+    }
+
+    if (extCounts.empty()) {
+        return topExt; // No files, so return an empty string
+    }
+
+    // Find the most common file extension
+    auto maxElement = std::max_element(
+        extCounts.begin(), 
+        extCounts.end(), 
+        [](const auto& a, const auto& b) { return a.second < b.second; }
+    );
+    
+    topExt = maxElement->first;
+    return topExt;
+}
+
+/******************************************************************************
  * getTotalSize: Returns the total size of all files in the directory.
  * 
  * @return totalSize: The total size of all files in the directory
@@ -137,8 +172,10 @@ string DirectoryReader::getPath() const {
 /******************************************************************************
  * readDirectory:   Reads the directory specified in the constructor and stores
  *                  the files and sub-directories in the files and directories
+ * 
+ * @return 1 if the directory was read successfully, 0 otherwise
  ******************************************************************************/
-void DirectoryReader::readDirectory() {
+int DirectoryReader::readDirectory() {
     DIR* dir;                   // Pointer to a directory stream
     struct dirent* entry;       // Pointer to a directory entry
     struct stat entInfo;        // Information about the directory entry
@@ -153,9 +190,12 @@ void DirectoryReader::readDirectory() {
     dir = opendir(path.c_str());
     if (dir == NULL) {
         cerr << "Error opening directory: " << path << ". Error: " << strerror(errno) << endl;
-        return;  // or handle this appropriately
+        return 0;  // return 0 to indicate failure
     }
 
+    // RAII approach to close dir automatically
+    auto dirCloser = [&]() { closedir(dir); };
+    std::shared_ptr<void> dirCloserGuard((void*)nullptr, [&](void*) { dirCloser(); });
     
     // Read files and directories within the current directory
     while ((entry = readdir(dir)) != NULL) {
@@ -227,9 +267,32 @@ void DirectoryReader::readDirectory() {
     // Check if readdir() stopped due to an error
     if (errno != 0) {
         cerr << "Error reading directory: " << path << ". Error: " << strerror(errno) << endl;
+        return 0;  // return 0 to indicate failure
+    }
+
+    return 1;  // return 1 to indicate success
+}
+
+/******************************************************************************
+ * canReadDirectory: Checks if the directory specified in the constructor can
+ *                   be read.
+ * 
+ * @return true if the directory can be read, false otherwise
+ ******************************************************************************/
+int DirectoryReader::canReadDirectory() const {
+    DIR* dir;                   // Pointer to a directory stream
+
+    // Reset the errno variable
+    errno = 0;
+
+    // Open the directory as a stream
+    dir = opendir(path.c_str());
+    if (dir == NULL) {
+        return 0;
     }
 
     closedir(dir);
+    return 1;
 }
 
 /******************************************************************************

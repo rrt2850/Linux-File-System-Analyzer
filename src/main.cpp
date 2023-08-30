@@ -5,105 +5,137 @@
  *              coordinates between different classes.
  * Author: Robert Tetreault
  ******************************************************************************/
-
 #include <iostream>
 #include <fstream>
 #include <unordered_map>
+#include <vector>
+#include <mutex>
+#include <chrono> 
 #include "DirectoryReader.h"
 #include "ThreadPool.h"
 #include "ReportGenerator.h"
 
+int main(int argc, char* argv[]) {
+    // Validate command-line arguments
+    if (argc < 2) {
+        std::cerr << "Usage: " << argv[0] << " <root_directory> [other_args...]" << std::endl
+                  << "For a list of arguments, run " << argv[0] << " --help" << std::endl;
+        return 1;
+    }
 
-int main() {
-    std::string root = "/";
+    // Initialize the root directory path
+    std::string root = argv[1];
 
-    // A list of directories that still need to be read
-    std::vector<DirectoryReader> directoriesLeft = { DirectoryReader(root) };   
-    
-    // An unordered map of completed directories
-    std::unordered_map<std::string, DirectoryReader> completedDirectories; 
-    
-    // An unordered map of deferred updates so 
+    // Verify that the root directory is readable
+    DirectoryReader tempDirChecker(root);
+    if (!tempDirChecker.canReadDirectory()) {
+        std::cerr << "Cannot read directory: " << root << std::endl;
+        return 1;
+    }
+
+    // Convert the remaining command-line arguments to a vector of strings
+    std::vector<std::string> args(argv + 2, argv + argc);
+
+    // Initialize data structures for tracking directories
+    std::vector<DirectoryReader> directoriesLeft = { DirectoryReader(root) };
+    std::unordered_map<std::string, DirectoryReader> completedDirectories;
     std::unordered_map<std::string, double> deferredUpdates;
+    std::atomic<int> exitCode = 0;  // To store the exit code in a thread-safe manner
 
-    // Initialize the thread pool
-    ThreadPool pool(100);
+    // Create a thread pool with 200 threads
+    ThreadPool pool(200);
 
-    // Mutex for synchronizing access to the directoriesLeft and completedDirectories vectors
+    // Mutex for thread-safe directory manipulation
     std::mutex dirMutex;
 
     DirectoryReader currentDir;
 
-    while (true) {
+    auto start_time = std::chrono::high_resolution_clock::now();  // Time measurement
 
-        // Start critical section
+    // Main processing loop
+    while (true) {
         {
+            // Lock scope for thread-safe manipulation of shared resources
             std::unique_lock<std::mutex> lock(dirMutex);
-            
+
+            // Check if there are any directories left to process
             if (directoriesLeft.empty()) {
-                if (pool.activeJobs == 0){
-                    break;  // Exit the loop if no directories are left
-                }
-                else {
-                    continue;  // Skip this iteration if there are no directories left but there are still active jobs
+                if (pool.activeJobs == 0) {
+                    break;
+                } else {
+                    continue;
                 }
             }
-            
+
+            // Retrieve the next directory to process
             currentDir = directoriesLeft.back();
             directoriesLeft.pop_back();
         }
-        // End critical section
 
-        pool.enqueue([currentDir, &dirMutex, &completedDirectories, &directoriesLeft, &deferredUpdates]() mutable {
-            // Expensive operation (reading directory) is outside the lock
-            currentDir.readDirectory();
-
-            // Lock when dealing with shared resources
-            {
-                std::unique_lock<std::mutex> lock(dirMutex);
-
-                // if the directory has been deferred and is now being read, update its total size
-                if (deferredUpdates.find(currentDir.getPath()) != deferredUpdates.end()) {
-                    // Add the deferred update to the directory's total size
-                    currentDir.addToSubDirTotalSize(deferredUpdates[currentDir.getPath()]);
-
-                    // Remove the deferred update
-                    deferredUpdates.erase(currentDir.getPath());
-                }
-
-                // Add subdirectories to directoriesLeft
-                if (!currentDir.getDirectories().empty()) {
-                    for (const auto& dir : currentDir.getDirectories()) {
-                        std::cout << "Adding directory: " << dir << std::endl;
-                        directoriesLeft.push_back(DirectoryReader(dir, currentDir.getPath()));
-                    }
-                }
-
-                // Check if it has a parent and update its totalsize
-                std::string parentPath = currentDir.getParentPath();
-                if (!parentPath.empty()) {
-
-                    // If the parent directory has already been read, update its total size
-                    if (completedDirectories.find(parentPath) != completedDirectories.end()) {
-                        completedDirectories[parentPath].addToTotalSize(currentDir.getTotalSize());
-                    } else {
-                        // Add a deferred update
-                        deferredUpdates[parentPath] += currentDir.getTotalSize();
-                    }
-                }
-
-                // Add the current directory to the completedDirectories map
-                completedDirectories[currentDir.getPath()] = currentDir;
+        // Enqueue a job in the thread pool to read and process the directory
+        pool.enqueue([currentDir, &dirMutex, &completedDirectories, &directoriesLeft, &deferredUpdates, &exitCode]() mutable {
+            // Attempt to read the directory; skip if failed
+            if (!currentDir.readDirectory()) {
+                std::cerr << "Failed to read directory: " << currentDir.getPath() << std::endl;
+                exitCode = 1;  // Setting exit code to indicate failure
+                return;  // Exit this lambda early if readDirectory() fails
             }
-            // End of lock
+
+            // Lock scope for thread-safe manipulation of shared resources
+            std::unique_lock<std::mutex> lock(dirMutex);
+
+            // Handle any deferred updates for this directory
+            if (deferredUpdates.find(currentDir.getPath()) != deferredUpdates.end()) {
+                currentDir.addToSubDirTotalSize(deferredUpdates[currentDir.getPath()]);
+                deferredUpdates.erase(currentDir.getPath());
+            }
+
+            // Enqueue any subdirectories for processing
+            if (!currentDir.getDirectories().empty()) {
+                for (const auto& dir : currentDir.getDirectories()) {
+                    std::cout << "Adding directory: " << dir << std::endl;
+                    directoriesLeft.push_back(DirectoryReader(dir, currentDir.getPath()));
+                }
+            }
+
+            // Update the parent directory's total size, if applicable
+            std::string parentPath = currentDir.getParentPath();
+            if (!parentPath.empty()) {
+                if (completedDirectories.find(parentPath) != completedDirectories.end()) {
+                    completedDirectories[parentPath].addToTotalSize(currentDir.getTotalSize());
+                } else {
+                    deferredUpdates[parentPath] += currentDir.getTotalSize();
+                }
+            }
+
+            // Mark this directory as completed
+            completedDirectories[currentDir.getPath()] = currentDir;
         });
     }
 
+    // Wait for all thread pool jobs to complete
+    std::cout << "Waiting for all thread pool jobs to complete..." << std::endl;
     pool.waitForCompletion();
 
-    ReportGenerator report(completedDirectories);
-    report.treeBuilder(root);
-    report.dumpInfoToFile("info.txt");
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
+    std::cout << "Total time taken: " << duration << " seconds." << std::endl;
 
-    return 0;
+    if (exitCode.load() != 0) { // Check if any lambda function failed
+        std::cerr << "One or more directory reads failed." << std::endl;
+    }
+
+    std::cout << "Generating report..." << std::endl;
+
+    // Generate a report based on the processed directories
+    ReportGenerator report(completedDirectories);
+    
+    if (report.generateReport("report.txt", root, args) != 0) { // Check if the report generation failed
+        std::cerr << "Failed to generate report." << std::endl;
+        return 1;
+    }
+
+    std::cout << "Report successfully generated." << std::endl;
+
+    return 0;  // Success
 }

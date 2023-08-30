@@ -25,13 +25,23 @@ class DirectoryReader {
         ~DirectoryReader();
 
         // Reads the directory specified in the constructor.
-        void readDirectory();
+        int readDirectory();
 
         // Adds to the total size of all files and sub-directories in the directory specified in the constructor.
         void addToTotalSize(double size);
 
         // Adds to the total size of all sub-directories in the directory specified in the constructor.
         void addToSubDirTotalSize(double size);
+
+        // Checks if the directory specified in the constructor can be read.
+        int canReadDirectory() const;
+
+        // Compares two DirectoryReader objects
+        DirectoryReader& operator=(const DirectoryReader& other);
+
+        //
+        //  Getters
+        //
 
         // Retrieves a list of files in the directory specified in the constructor.
         std::vector<FileAnalyzer> getFiles() const;
@@ -45,6 +55,9 @@ class DirectoryReader {
         // Retrieves the path of the parent directory.
         std::string getParentPath() const;
 
+        // Retrieves the most common file extension in the directory specified in the constructor.
+        std::string getTopFileExtension() const;
+
         // Retrieves the average size of all files in the directory specified in the constructor.
         double getAverageFileSize() const;
 
@@ -56,8 +69,6 @@ class DirectoryReader {
 
         // Retrieves the number of files in the directory specified in the constructor.
         int getNumFiles() const;
-
-        DirectoryReader& operator=(const DirectoryReader& other);
 
     private:
         std::string path;                       // The path to the current directory to be searched
