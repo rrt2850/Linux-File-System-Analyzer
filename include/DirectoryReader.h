@@ -16,7 +16,8 @@
 
 class DirectoryReader {
     public:
-        // A list of directories to skip
+        // A list of directories to skip (set to skip /mnt/ by default so if the program is
+        // running on the linux subsystem for windows, it doesn't try to read the windows file system)
         const std::vector<std::string> SKIP_DIRECTORIES = {"/mnt/"};
 
         DirectoryReader();

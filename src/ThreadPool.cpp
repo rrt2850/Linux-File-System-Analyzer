@@ -2,6 +2,7 @@
  * File: ThreadPool.cpp
  * Description: A basic thread pool implementation.
  * Author: Robert Tetreault
+ * Note: This code is slightly borrowed from code I found on StackOverflow.
  ******************************************************************************/
 
 #include "ThreadPool.h"

@@ -189,7 +189,7 @@ int DirectoryReader::readDirectory() {
     // Open the directory as a stream
     dir = opendir(path.c_str());
     if (dir == NULL) {
-        cerr << "Error opening directory: " << path << ". Error: " << strerror(errno) << endl;
+        cerr << "\033[31mError opening directory: " << path << ". Error: " << strerror(errno) << "\033[0m" << endl;
         return 0;  // return 0 to indicate failure
     }
 
@@ -210,7 +210,7 @@ int DirectoryReader::readDirectory() {
         
         // If there's an error stat-ing the path, skip it
         if (lstat(fullpath.c_str(), &entInfo) == -1) {
-            cerr << "Error stat-ing path: " << fullpath << ". Error: " << strerror(errno) << endl;
+            cerr << "\033[31mError stat-ing path: " << fullpath << ". Error: " << strerror(errno) << "\033[0m" << endl;
             continue;  // move on to the next directory entry
         }
         
@@ -266,7 +266,7 @@ int DirectoryReader::readDirectory() {
 
     // Check if readdir() stopped due to an error
     if (errno != 0) {
-        cerr << "Error reading directory: " << path << ". Error: " << strerror(errno) << endl;
+        cerr << "\033[31mError reading directory: " << path << ". Error: " << strerror(errno) << "\033[0m" << endl;
         return 0;  // return 0 to indicate failure
     }
 

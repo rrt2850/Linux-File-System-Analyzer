@@ -58,7 +58,7 @@ void ReportGenerator::dumpInfo(std::string fileName, std::string root, size_t mo
     if (mode == 1) {
         outFile.open(fileName);
         if (!outFile) {
-            std::cerr << "Error opening file for writing" << std::endl;
+            std::cerr << "\033[31mError opening file for writing\033[0m" << std::endl;
             return;
         }
     }
@@ -111,7 +111,7 @@ void ReportGenerator::dumpInfoLevels(std::string fileName, std::string root, siz
     if (mode == 1) {
         outFile.open(fileName);
         if (!outFile) {
-            std::cerr << "Error opening file for writing" << std::endl;
+            std::cerr << "\033[31mError opening file for writing\033[0m" << std::endl;
             return;
         }
     }
@@ -201,7 +201,7 @@ void ReportGenerator::dumpPaths(std::string fileName, std::string root, size_t m
     collectSubdirectories(root, dirs);
 
     if (dirs.empty()) {
-        std::cerr << "Error: No directories to sort" << std::endl;
+        std::cerr << "\033[31mError: No directories to sort\033[0m" << std::endl;
         return;
     }
 
@@ -211,7 +211,7 @@ void ReportGenerator::dumpPaths(std::string fileName, std::string root, size_t m
     if (mode == 2 || mode == 3) {
         outFile.open(fileName);
         if (!outFile) {
-            std::cerr << "Error opening file for writing" << std::endl;
+            std::cerr << "\033[31mError opening file for writing\033[0m" << std::endl;
             return;
         }
     }
@@ -244,7 +244,7 @@ void ReportGenerator::treeBuilder(std::string fileName, std::string rootPath, si
     try {
     // Check if the root directory exists in the completedDirectories map
     if (completedDirectories.find(rootPath) == completedDirectories.end()) {
-        std::cerr << "Error: Root directory does not exist" << std::endl;
+        std::cerr << "\033[31mError: Root directory does not exist\033[0m" << std::endl;
         return;
     }
 
@@ -253,7 +253,7 @@ void ReportGenerator::treeBuilder(std::string fileName, std::string rootPath, si
 
     // Check if the root directory is empty
     if (rootDir.getDirectories().empty() && rootDir.getFiles().empty()) {
-        std::cerr << "Error: Root directory is empty" << std::endl;
+        std::cerr << "\033[31mError: Root directory is empty\033[0m" << std::endl;
         return;
     }
 
@@ -265,7 +265,7 @@ void ReportGenerator::treeBuilder(std::string fileName, std::string rootPath, si
     } else {
         outFile.open(fileName);
         if (!outFile.is_open()) {
-            std::cerr << "Unable to open file";
+            std::cerr << "\033[31mUnable to open file\033[0m";
             return;
         }
         outStream = &outFile;
@@ -278,7 +278,7 @@ void ReportGenerator::treeBuilder(std::string fileName, std::string rootPath, si
         }
         
     } catch (const std::exception& e) {
-        std::cerr << "Exception in treeBuilder: " << e.what() << std::endl;
+        std::cerr << "\033[31mException in treeBuilder: " << e.what() << "\033[0m" << std::endl;
     }
 }
 
@@ -313,7 +313,7 @@ void ReportGenerator::treeBuilderLevels(std::string fileName, std::string rootPa
     } else {
         outFile.open(fileName);
         if (!outFile.is_open()) {
-            std::cerr << "Unable to open file";
+            std::cerr << "\033[0mUnable to open file\033[0m";
             return;
         }
         outStream = &outFile;
@@ -402,7 +402,7 @@ void ReportGenerator::printTree(const DirectoryReader& dir, std::string prefix, 
     }
         
     } catch (const std::exception& e) {
-        std::cerr << "Exception in printTree: " << e.what() << std::endl;
+        std::cerr << "\033[31mException in printTree: " << e.what() << "\033[0m" << std::endl;
     }
 }
 
@@ -458,12 +458,13 @@ int ReportGenerator::generateReport(std::string fileName, std::string root, std:
         try {
             arg = mapArgument(arguments[i]);
         } catch (std::exception& e) {
-            std::cerr << "Error mapping argument: " << e.what() << std::endl;
+            std::cerr << "\033[31mError mapping argument: " << e.what() << "\033[0m" << std::endl;
             errorCode = 1; // Update error code
             continue;
         }
 
         try {
+            // Execute the appropriate action based on the argument
             switch (arg) {
                 case TREE:
                     treeBuilder(fileName, root, 0);
@@ -518,12 +519,12 @@ int ReportGenerator::generateReport(std::string fileName, std::string root, std:
                     }
                     break;
                 default:
-                        std::cerr << "Unknown argument: " << arguments[i] << std::endl;
+                        std::cerr << "\033[31mUnknown argument: " << arguments[i] << "\033[0m" << std::endl;
                         errorCode = 2; // Update error code
                         break;
             }
         } catch (std::exception& e) {
-            std::cerr << "Error executing action for argument: " << arguments[i] << ". Exception: " << e.what() << std::endl;
+            std::cerr << "\033[31mError executing action for argument: " << arguments[i] << ". Exception: " << e.what() << "\033[0m" <<std::endl;
             errorCode = 3; // Update error code
         }
     }
